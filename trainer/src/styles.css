@@ -63,6 +63,84 @@ button:focus-visible {
     outline-offset: 3px;
 }
 
+/* Формы ответов */
+
+fieldset {
+    margin: 20px 0;
+    padding: 16px;
+    border: 1px solid #d9e1e7;
+    border-radius: 10px;
+    background: #ffffff;
+}
+
+legend {
+    padding: 0 8px;
+    font-weight: 600;
+    color: #1a252f;
+}
+
+fieldset label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0;
+    padding: 12px 14px;
+    border: 1px solid #e2e8ee;
+    border-radius: 8px;
+    background: #f8f9fa;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+fieldset label:hover {
+    background: #eef2ff;
+    border-color: #a5b4fc;
+}
+
+input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    accent-color: #6842a6;
+    cursor: pointer;
+}
+
+fieldset label:has(input:checked) {
+    background: #f0eafd;
+    border-color: #8b6bc1;
+}
+
+/* Поле текстового ответа */
+
+label:has(textarea) {
+    display: block;
+    margin: 20px 0;
+    font-weight: 600;
+    color: #1a252f;
+}
+
+textarea {
+    display: block;
+    width: 100%;
+    min-height: 140px;
+    margin-top: 10px;
+    padding: 14px;
+    border: 1px solid #cbd5df;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #1a252f;
+    font: inherit;
+    line-height: 1.5;
+    resize: vertical;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: #6842a6;
+    box-shadow: 0 0 0 3px rgba(104, 66, 166, 0.15);
+}
+
 pre {
     max-width: 100%;
     margin: 16px 0;
@@ -84,6 +162,32 @@ li {
     margin-bottom: 8px;
 }
 
+.navigation-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.navigation-buttons button {
+    flex: 1;
+    width: auto;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.finish-button {
+    background: #6842a6;
+    border-color: #6842a6;
+    color: #ffffff;
+    text-align: center;
+    font-weight: 600;
+}
+
+.finish-button:hover {
+    background: #523383;
+    border-color: #523383;
+    color: #ffffff;
+}
 @media (max-width: 767px) {
     body {
         padding: 12px;
