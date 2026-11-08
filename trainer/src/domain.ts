@@ -34,6 +34,11 @@ export type ShortTextAnswer = {
 
 export type Answer = SingleChoiceAnswer | ShortTextAnswer;
 
+export type Attempt = {
+  answers: Answer[];
+  submitted: boolean;
+};
+
 export type TrainingSet = {
   id: string;
   title: string;
@@ -76,4 +81,47 @@ export function getProgress(tasks: Task[], answers: Answer[]): {
   };
 }
 
+export function updateAnswer(attempt: Attempt, newAnswer: Answer): Attempt {
+  if (attempt.submitted) {
+    return attempt;
+  }
 
+  const existingAnswer = attempt.answers.find(
+    (answer) => answer.taskId === newAnswer.taskId
+  );
+
+  let updatedAnswers: Answer[];
+
+  if (existingAnswer) {
+    updatedAnswers = attempt.answers.map((answer) => {
+      if (answer.taskId === newAnswer.taskId) {
+        return newAnswer;
+      }
+
+      return answer;
+    });
+  } else {
+    updatedAnswers = [...attempt.answers, newAnswer];
+  }
+
+  return {...attempt, answers: updatedAnswers,
+  };
+}
+
+export function clearAnswer(attempt: Attempt, taskId: string): Attempt {
+  if (attempt.submitted) {
+    return attempt;
+  }
+
+  return {...attempt, answers: attempt.answers.filter((answer) => answer.taskId !== taskId),
+  };
+} 
+
+export function finishAttempt(attempt: Attempt): Attempt {
+  if (attempt.submitted) {
+    return attempt;
+  }
+
+  return {...attempt, submitted: true,
+  };
+}

@@ -4,10 +4,11 @@ type TaskDetailsProps = {
   task: Task;
   answers: Answer[];
   onAnswerChange: (answer: Answer) => void;
+  onClearAnswer: (taskId: string) => void;
 };
 
-export default function TaskDetails({ task, answers, onAnswerChange, }: TaskDetailsProps) {
-   
+export default function TaskDetails({ task, answers, onAnswerChange, onClearAnswer, }: TaskDetailsProps) {
+
   let answerContent;
 
   const currentAnswer = answers.find(
@@ -42,7 +43,8 @@ export default function TaskDetails({ task, answers, onAnswerChange, }: TaskDeta
         ))}
       </fieldset>
     );
-  } else {
+  } 
+  else {
     let text = "";
 
     if (currentAnswer?.kind === "short-text") {
@@ -75,6 +77,10 @@ export default function TaskDetails({ task, answers, onAnswerChange, }: TaskDeta
       {task.code && <pre>{task.code}</pre>}
 
       {answerContent}
+      {currentAnswer && (
+        <button onClick={() => onClearAnswer(task.id)}>
+           Очистить ответ
+        </button>)}
     </div>
   );
 }

@@ -2,39 +2,32 @@ import { useState } from "react";
 import { trainingSet } from "./taskCatalog";
 import TaskNavigation from "./TaskNavigation";
 import TaskDetails from "./TaskDetails";
-import { findTask, getProgress } from "./domain";
-import type { Answer } from "./domain";
+import { findTask, getProgress, updateAnswer, finishAttempt, clearAnswer } from "./domain";
+import type { Answer, Attempt, Task } from "./domain";
 
 export default function App() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(
-    trainingSet.tasks[0]?.id ?? null
-  );
-  const [answers, setAnswers] = useState<Answer[]>([]);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+    trainingSet.tasks[0]?.id ?? null);
+
+  const [attempt, setAttempt] = useState<Attempt>({answers: [],submitted: false,});
 
 function handleAnswerChange(newAnswer: Answer) {
-  const existingAnswer = answers.find(
-    (answer) => answer.taskId === newAnswer.taskId
-  );
-
-  if (existingAnswer) {
-    setAnswers(
-      answers.map((answer) => {
-        if (answer.taskId === newAnswer.taskId) {
-          return newAnswer;
-        }
-
-        return answer;
-      })
-    );
-  } else {
-    setAnswers([...answers, newAnswer]);
-  }
+  setAttempt(updateAnswer(attempt, newAnswer));
 }
+
+function handleClearAnswer(taskId: string) {
+  setAttempt(clearAnswer(attempt, taskId));
+}
+
+function handleNewAttempt() {
+  setAttempt({answers: [],submitted: false,});
+
+  setSelectedTaskId(trainingSet.tasks[0].id);
+}
+
 function handlePreviousTask() {
   const currentIndex = trainingSet.tasks.findIndex(
-    (task) => task.id === selectedTaskId
-  );
+    (task) => task.id === selectedTaskId);
 
   if (currentIndex > 0) {
     setSelectedTaskId(trainingSet.tasks[currentIndex - 1].id);
@@ -42,9 +35,7 @@ function handlePreviousTask() {
 }
 
 function handleNextTask() {
-  const currentIndex = trainingSet.tasks.findIndex(
-    (task) => task.id === selectedTaskId
-  );
+  const currentIndex = trainingSet.tasks.findIndex((task) => task.id === selectedTaskId);
 
   if (currentIndex < trainingSet.tasks.length - 1) {
     setSelectedTaskId(trainingSet.tasks[currentIndex + 1].id);
@@ -54,15 +45,14 @@ function handleNextTask() {
 function handleFinish() {
   if (unansweredTasks.length > 0) {
     const confirmed = window.confirm(
-      "Осталось незаполненных заданий: ${unansweredTasks.length}. Завершить попытку?"
-    );
+      `Осталось незаполненных заданий: ${unansweredTasks.length}. Завершить попытку?`);
 
     if (!confirmed) {
       return;
     }
   }
 
-  setIsSubmitted(true);
+  setAttempt(finishAttempt(attempt));
 }
 
   if (trainingSet.tasks.length === 0) {
@@ -74,13 +64,11 @@ function handleFinish() {
     );
   }
 
-  const selectedTask = selectedTaskId !== null ? findTask(trainingSet.tasks, selectedTaskId) : undefined;
-  const progress = getProgress(trainingSet.tasks, answers);
+const selectedTask = selectedTaskId !== null ? findTask(trainingSet.tasks, selectedTaskId) : undefined;
+const progress = getProgress(trainingSet.tasks, attempt.answers);
 
 const unansweredTasks = trainingSet.tasks.filter((task) => {
-  const answer = answers.find(
-    (item) => item.taskId === task.id
-  );
+  const answer = attempt.answers.find((item) => item.taskId === task.id);
 
   if (!answer) {
     return true;
@@ -102,20 +90,45 @@ const unansweredTasks = trainingSet.tasks.filter((task) => {
   if (selectedTask) {
     taskContent = (<TaskDetails
       task={selectedTask}
-      answers={answers}
+      answers={attempt.answers}
       onAnswerChange={handleAnswerChange}
+      onClearAnswer={handleClearAnswer}
     />
   );
   } else {
     taskContent = <p>Задание не найдено.</p>;
   }
 
+function getAnswerText(task: Task): string {
+  const answer = attempt.answers.find((item) => item.taskId === task.id);
+
+  if (!answer) {
+    return "Нет ответа";
+  }
+
+  if (answer.kind === "single-choice" && task.kind === "single-choice") {
+    const selectedOption = task.options.find((option) => option.id === answer.optionId);
+
+    if (selectedOption) {
+      return selectedOption.label;
+    }
+  }
+
+  if (answer.kind === "short-text" && task.kind === "short-text") {
+    if (answer.text.trim() !== "") {
+      return answer.text;
+    }
+  }
+
+  return "Нет ответа";
+}
+
   return (
     <div>
       <h1>{trainingSet.title}</h1>
       <p>Количество заданий: {trainingSet.tasks.length}</p>
 
-      {!isSubmitted && (
+      {!attempt.submitted && (
         <>
           <p>Прогресс: {progress.filled} из {progress.total}</p>
 
@@ -135,8 +148,8 @@ const unansweredTasks = trainingSet.tasks.filter((task) => {
           )}
         </>
       )}
-     
-      {!isSubmitted ? (
+
+      {!attempt.submitted && (
         <>
           <TaskNavigation
             tasks={trainingSet.tasks}
@@ -155,70 +168,45 @@ const unansweredTasks = trainingSet.tasks.filter((task) => {
 
             <button
               onClick={handleNextTask}
-              disabled={
-                selectedTaskId ===
-                trainingSet.tasks[trainingSet.tasks.length - 1].id
-              }
+              disabled={selectedTaskId === trainingSet.tasks[trainingSet.tasks.length - 1].id}
             >
               Далее
             </button>
           </div>
 
-          <button className="finish-button" onClick={handleFinish}>
+                    <button className="finish-button" onClick={handleFinish}>
             Завершить попытку
           </button>
         </>
-      ) : (
-        <div>
-          <h2>Попытка завершена</h2>
-
-          <h3>Обзор ответов</h3>
-
-          {trainingSet.tasks.map((task) => {
-            const answer = answers.find(
-              (item) => item.taskId === task.id
-            );
-
-            let answerText = "Нет ответа";
-
-            if (answer) {
-              if (answer.kind === "single-choice" &&
-                  task.kind === "single-choice") {
-                const selectedOption = task.options.find(
-                  (option) => option.id === answer.optionId
-                );
-
-                if (selectedOption) {
-                  answerText = selectedOption.label;
-                }
-              } else if (answer.kind === "short-text") {
-                if (answer.text.trim() !== "") {
-                  answerText = answer.text;
-                }
-              }
-            }
-
-            return (
-              <div key={task.id}>
-                <h4>{task.topic}</h4>
-                <p>{task.prompt}</p>
-                <p>Ваш ответ: {answerText}</p>
-              </div>
-            );
-          })}
-
-          <button
-            onClick={() => {
-              setAnswers([]);
-              setSelectedTaskId(trainingSet.tasks[0].id);
-              setIsSubmitted(false);
-            }}
-          >
-            Начать новую попытку
-          </button>
-        </div>
       )}
 
+      {attempt.submitted && (
+        <>
+          <h2>Попытка завершена</h2>
+
+          <button onClick={handleNewAttempt}>
+            Начать новую попытку
+          </button>
+        </>
+      )}
+
+      <div>
+        <h3>Обзор ответов</h3>
+
+        {trainingSet.tasks.map((task) => (
+          <div key={task.id}>
+            <h4>{task.topic}</h4>
+            <p>{task.prompt}</p>
+            <p>Ваш ответ: {getAnswerText(task)}</p>
+
+            {!attempt.submitted && attempt.answers.some((answer) => answer.taskId === task.id) && (
+                <button onClick={() => handleClearAnswer(task.id)}>
+                  Очистить ответ
+                </button>
+              )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
